@@ -40,40 +40,47 @@ def update_map():
 
 # ------------------ CẤU HÌNH GNSS -------------------
 def configure_gnss(port):
-    # 1️.Đặt tần số cập nhật 10Hz (CFG-RATE)
+    # 1. Đặt tần số cập nhật 10Hz
     msg_rate = UBXMessage("CFG", "CFG-RATE", POLL=False,
-                          measRate=100,  # ms per measurement (10Hz)
+                          measRate=100,  # ms (10Hz)
                           navRate=1,
                           timeRef=0)
     port.write(msg_rate.serialize())
     time.sleep(0.5)
-    print("[CFG] Set rate = 10 Hz")
+    print("[CFG] Set update rate = 10 Hz")
 
-    # 2️.Bật GPS + Galileo + BeiDou (CFG-GNSS)
-    msg_gnss = UBXMessage("CFG", "CFG-GNSS", POLL=False,
-        msgVer=0, numConfigBlocks=3,
-        gnssConfig=[
-            {'gnssId': 0, 'resTrkCh': 8, 'maxTrkCh': 16, 'enabled': 1},  # GPS
-            {'gnssId': 2, 'resTrkCh': 4, 'maxTrkCh': 8,  'enabled': 1},  # Galileo
-            {'gnssId': 3, 'resTrkCh': 4, 'maxTrkCh': 8,  'enabled': 1},  # BeiDou
-        ])
+    # 2. Bật GPS, Galileo, BeiDou
+    payload = bytes([
+        0x00,  # msgVer
+        0x03,  # numConfigBlocks
+        0x00,  # reserved1
+        0x00,  # reserved2
+        # GPS
+        0x00, 0x08, 0x10, 0x01,
+        # Galileo
+        0x02, 0x04, 0x08, 0x01,
+        # BeiDou
+        0x03, 0x04, 0x08, 0x01
+    ])
+    msg_gnss = UBXMessage("CFG", "CFG-GNSS", POLL=False, payload=payload)
     port.write(msg_gnss.serialize())
-    print("[CFG] Enabled GPS, Galileo, BeiDou")
+    time.sleep(0.5)
+    print("[CFG] Enabled GPS + Galileo + BeiDou")
 
-    # 3️.Lưu cấu hình (CFG-CFG)
+    # 3. Lưu cấu hình
     msg_save = UBXMessage("CFG", "CFG-CFG", POLL=False,
-                          clearMask=0, saveMask=0xFFFF, loadMask=0)
+                          clearMask=0,
+                          saveMask=0xFFFF,
+                          loadMask=0)
     port.write(msg_save.serialize())
     print("[CFG] Configuration saved")
-
-    time.sleep(1)
 
 # ------------------ ĐỌC GPS -------------------
 def read_gps():
     with serial.Serial(SERIAL_PORT, BAUDRATE, timeout=1) as port:
-        configure_gnss(port)  # Cấu hình GNSS trước khi đọc
+        configure_gnss(port)
         ubr = UBXReader(port)
-        print("[INFO] Start reading NAV-PVT data...")
+        print("[INFO] Reading NAV-PVT data...")
 
         for _, parsed in ubr:
             if parsed.identity == "NAV-PVT" and parsed.fixType >= 3 and parsed.gnssFixOk == 1:
