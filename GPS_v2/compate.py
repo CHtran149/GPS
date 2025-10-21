@@ -14,12 +14,12 @@ def haversine(lat1, lon1, lat2, lon2):
 
 # --- Ví dụ: so sánh ---
 # Tọa độ thực tế
-real_lat = 20.981377424236094
-real_lon =  105.79884315526488
+real_lat = 20.98155
+real_lon =  105.78720
 
 # Tọa độ GPS định vị được
-gps_lat = 20.9813857
-gps_lon = 105.7989378
+gps_lat = 20.9815633
+gps_lon = 105.7870425
 
 distance = haversine(real_lat, real_lon, gps_lat, gps_lon)
 print(f"Khoảng cách thực tế ↔ định vị: {distance:.2f} mét")
